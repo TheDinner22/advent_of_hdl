@@ -24,7 +24,7 @@ end
 
 
 (* we assume all inputs are 4 chars for now, we can handle other cases later *)
-let create ({ din; clock; clear } : _ I.t) : _ O.t =
+let create _scope ({ din; clock; clear } : _ I.t) : _ O.t =
     let spec = Signal.Reg_spec.create ~clock ~clear () in
     let chars = split_msb ~part_width:8 din in
     let num_chars = List.length chars in
@@ -93,3 +93,9 @@ let create ({ din; clock; clear } : _ I.t) : _ O.t =
         was_r  = c3_r_is_R_delay_4;
     };;
 
+(* The [hierarchical] wrapper is used to maintain module hierarchy in the generated
+   waveforms and (optionally) the generated RTL. *)
+let hierarchical scope =
+  let module Scoped = Hierarchy.In_scope (I) (O) in
+  Scoped.hierarchical ~scope ~name:"parse_ascii" create
+;;
