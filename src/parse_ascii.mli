@@ -2,15 +2,18 @@ open Hardcaml
 
 module I : sig
   type 'a t =
-    { a : 'a
-    ; b : 'a
-    }
+    { din : 'a [@bits input_width] (* 4*8=32 *)
+    ; clock : 'a
+    ; clear : 'a
+    } 
   [@@deriving hardcaml]
 end
 
 module O : sig
   type 'a t =
-    { y : 'a }
+      { number : 'a [@bits output_width]
+      ; was_r  : 'a (* 1 for R, 0 for L*)
+      }
   [@@deriving hardcaml]
 end
 
