@@ -10,9 +10,6 @@ module Harness =
 
 let ( <--. ) = Bits.( <--. )
 
-let create (_scope : Scope.t) (i : Signal.t Parse_ascii.I.t) =
-  Parse_ascii.create i
-
 let simple_testbench
     ~(inputs : Bits.t ref Parse_ascii.I.t)
     ~(outputs : Bits.t ref Parse_ascii.O.t)
@@ -34,6 +31,7 @@ let simple_testbench
     cycle ();
     cycle ();
     cycle ();
+    cycle ();
     let r = Bits.to_int_trunc !(outputs.was_r) in
     let number = Bits.to_int_trunc !(outputs.number) in
     print_s [%message "pipeline result" (raw_ascii : string) (r : int) (number : int)]
@@ -43,7 +41,7 @@ let simple_testbench
 ;;
 
 let%expect_test "AND gate truth table" =
-  Harness.run ~create simple_testbench;
+  Harness.run ~create:Parse_ascii.hierarchical simple_testbench;
   [%expect
     {||}]
 ;;
@@ -57,13 +55,13 @@ let%expect_test "AND gate with printed waveforms" =
   in
 
   Harness.run
-    ~create
-    ~trace:`All_named
+    ~create:Parse_ascii.hierarchical
+    ~trace:`Ports_only
     ~print_waves_after_test:(fun waves ->
       Waveform.print
         ~display_rules
-        ~signals_width:20
-        ~display_width:80
+        ~signals_width:40
+        ~display_width:100
         ~wave_width:2
         waves)
     simple_testbench;
