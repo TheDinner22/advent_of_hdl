@@ -10,6 +10,7 @@ module I = struct
     { din : 'a [@bits input_width] (* 4*8=32 *)
     ; clock : 'a
     ; clear : 'a
+    ; d_valid: 'a
     } 
   [@@deriving hardcaml]
 end
@@ -18,20 +19,22 @@ module O = struct
   type 'a t =
       { number : 'a [@bits output_width]
       ; was_r  : 'a (* 1 for R, 0 for L*)
+      ; output_valid : 'a
       }
   [@@deriving hardcaml]
 end
 
 
 (* we assume all inputs are 4 chars for now, we can handle other cases later *)
-let create _scope ({ din; clock; clear } : _ I.t) : _ O.t =
+let create _scope ({ din; clock; clear; d_valid } : _ I.t) : _ O.t =
     let spec = Signal.Reg_spec.create ~clock ~clear () in
     let chars = split_msb ~part_width:8 din in
     let num_chars = List.length chars in
     assert (num_chars = 4);
 
-    (* stage 1 register raw ascii char inputs *)
+    (* stage 1 register raw ascii char inputs and pipeline the d_valid signal *)
     let chars_r = List.map ~f:(Signal.reg spec) chars in 
+    let valid_pipeline = Signal.pipeline spec ~enable:Signal.vdd ~n:5 d_valid in
 
     (* ideally we leave in list and keep doing operations
        on it, but char1 needs something different from char2
@@ -91,6 +94,7 @@ let create _scope ({ din; clock; clear } : _ I.t) : _ O.t =
     {
         number = final_sum_r;
         was_r  = c3_r_is_R_delay_4;
+        output_valid = valid_pipeline;
     };;
 
 (* The [hierarchical] wrapper is used to maintain module hierarchy in the generated

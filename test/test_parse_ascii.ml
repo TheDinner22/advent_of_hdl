@@ -26,15 +26,18 @@ let simple_testbench
     cycle ();
     inputs.clear <--. 0;
     inputs.din := (bits_of_ascii raw_ascii); 
+    inputs.d_valid <--. 1;
+    cycle ();
+    inputs.d_valid <--. 0;
     cycle ();
     cycle ();
     cycle ();
     cycle ();
-    cycle ();
-    cycle ();
+    let valid = Bits.to_int_trunc !(outputs.output_valid) in
     let r = Bits.to_int_trunc !(outputs.was_r) in
     let number = Bits.to_int_trunc !(outputs.number) in
-    print_s [%message "pipeline result" (raw_ascii : string) (r : int) (number : int)]
+    cycle ();
+    print_s [%message "pipeline result" (raw_ascii : string) (r : int) (number : int) (valid : int)]
   in
 
   set "R123";
@@ -43,7 +46,7 @@ let simple_testbench
 let%expect_test "AND gate truth table" =
   Harness.run ~create:Parse_ascii.hierarchical simple_testbench;
   [%expect
-    {||}]
+    {| ("pipeline result" (raw_ascii R123) (r 1) (number 123) (valid 1)) |}]
 ;;
 
 let%expect_test "AND gate with printed waveforms" =
@@ -67,6 +70,26 @@ let%expect_test "AND gate with printed waveforms" =
     simple_testbench;
 
   [%expect
-    {||}]
+    {|
+    ("pipeline result" (raw_ascii R123) (r 1) (number 123) (valid 1))
+    ┌Signals───────────────────────────────┐┌Waves─────────────────────────────────────────────────────┐
+    │clear                                 ││──────┐                                                   │
+    │                                      ││      └───────────────────────────────────                │
+    │clock                                 ││┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐│
+    │                                      ││   └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └│
+    │d_valid                               ││      ┌─────┐                                             │
+    │                                      ││──────┘     └─────────────────────────────                │
+    │                                      ││──────┬───────────────────────────────────                │
+    │din                                   ││ 0    │1378955827                                         │
+    │                                      ││──────┴───────────────────────────────────                │
+    │                                      ││──────────────────────────────┬─────┬─────                │
+    │number                                ││ 0                            │560  │123                  │
+    │                                      ││──────────────────────────────┴─────┴─────                │
+    │output_valid                          ││                                    ┌─────                │
+    │                                      ││────────────────────────────────────┘                     │
+    │was_r                                 ││                                    ┌─────                │
+    │                                      ││────────────────────────────────────┘                     │
+    └──────────────────────────────────────┘└──────────────────────────────────────────────────────────┘
+    |}]
 ;;
 
