@@ -28,9 +28,33 @@ end
 (* we assume all inputs are 4 chars for now, we can handle other cases later *)
 let create _scope ({ din; clock; clear; d_valid } : _ I.t) : _ O.t =
     let spec = Signal.Reg_spec.create ~clock ~clear () in
-    let chars = split_msb ~part_width:8 din in
-    let num_chars = List.length chars in
-    assert (num_chars = 4);
+    let ascii_zero = of_int_trunc ~width:8 (Char.to_int '0') in
+    let binary_zero = of_int_trunc ~width:8 0 in
+    let raw_chars = split_msb ~part_width:8 din in
+    let packed_chars =
+        match raw_chars with
+        | [a; b; c; d] ->
+                let is_2_chars = 
+                    (a ==: binary_zero) &:
+                    (b ==: binary_zero) in
+                let is_3_chars = 
+                    a ==: binary_zero in
+                let sel = is_3_chars @: is_2_chars in
+                (*mux cases:
+                    is_3_chars | is_2_chars | desired output
+                    0          | 0          | chars=raw_chars
+                    0          | 1          | not possible, output = don't care (just set chars=raw_chars)
+                    1          | 0          | chars=[b, ascii_zero, c, d]
+                    1          | 1          | chars[c, ascii_zero, ascii_zero, d]=
+                *)
+                cases sel 
+                ~default:(din)
+                [
+                      of_string "10", concat_msb [b; ascii_zero; c; d]
+                    ; of_string "11", concat_msb [c; ascii_zero; ascii_zero; d]
+                ]
+        | _ -> assert false in
+    let chars = split_msb ~part_width:8 packed_chars in
 
     (* stage 1 register raw ascii char inputs and pipeline the d_valid signal *)
     let chars_r = List.map ~f:(Signal.reg spec) chars in 
@@ -50,9 +74,9 @@ let create _scope ({ din; clock; clear; d_valid } : _ I.t) : _ O.t =
        no registers here                            *)
     let c3_r_is_R = c3_r ==: of_int_trunc ~width:8 (Char.to_int 'R') in
     (* we will need to resize later so no point compressing to 4 bits now *)
-    let c2_r_as_bcd = c2_r -: of_int_trunc ~width:8 (Char.to_int '0') in
-    let c1_r_as_bcd = c1_r -: of_int_trunc ~width:8 (Char.to_int '0') in
-    let c0_r_as_bcd = c0_r -: of_int_trunc ~width:8 (Char.to_int '0') in
+    let c2_r_as_bcd = c2_r -: ascii_zero in
+    let c1_r_as_bcd = c1_r -: ascii_zero in
+    let c0_r_as_bcd = c0_r -: ascii_zero in
 
     (* stage 2: register the previous comb logic, and save some pain on R/L signal *)
 
