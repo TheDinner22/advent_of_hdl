@@ -37,7 +37,7 @@ let create _scope ({ din } : _ I.t) : _ O.t =
             ; { valid = pos_sel.:(9); value = din -: (of_int_trunc ~width:16 100) }
             ] in
     let neg_sel = List.map ~f:(of_int_trunc ~width:16) [-100; -200; -300; -400; -500; -600; -700; -800; -900]
-              |> List.map ~f:(fun num -> din <=+ num)
+              |> List.map ~f:(fun num -> din <+ num)
               |> Signal.concat_msb in
     let neg_mod_result = priority_select_with_default
         ~default:(din +: (of_int_trunc ~width:16 100))
