@@ -10,7 +10,8 @@ end
 
 module O = struct
   type 'a t =
-      { dout : 'a [@bits 16] }
+      { dout : 'a [@bits 16]
+      ; times_passed_zero : 'a [@bits 4] }
   [@@deriving hardcaml]
 end
 
@@ -22,6 +23,7 @@ let create _scope ({ din } : _ I.t) : _ O.t =
     let pos_sel = List.map ~f:(of_int_trunc ~width:16) [100; 200; 300; 400; 500; 600; 700; 800; 900; 1000]
               |> List.map ~f:(fun num -> din >=: num)
               |> Signal.concat_msb in
+    let pos_times_passed_zero = leading_ones pos_sel in
     let pos_mod_result = priority_select_with_default
         ~default:din
         With_valid.
@@ -39,6 +41,7 @@ let create _scope ({ din } : _ I.t) : _ O.t =
     let neg_sel = List.map ~f:(of_int_trunc ~width:16) [-100; -200; -300; -400; -500; -600; -700; -800; -900]
               |> List.map ~f:(fun num -> din <+ num)
               |> Signal.concat_msb in
+    let neg_times_passed_zero = leading_ones neg_sel in
     let neg_mod_result = priority_select_with_default
         ~default:(din +: (of_int_trunc ~width:16 100))
         With_valid.
@@ -53,8 +56,10 @@ let create _scope ({ din } : _ I.t) : _ O.t =
             ; { valid = neg_sel.:(8); value = din +: (of_int_trunc ~width:16 200) }
             ] in
     let mod_result = mux2 din_is_pos pos_mod_result neg_mod_result in
+    let times_passed_zero = mux2 din_is_pos pos_times_passed_zero (neg_times_passed_zero +: of_int_trunc ~width:4 1) in
     {
         dout = mod_result;
+        times_passed_zero = times_passed_zero;
     }
 
 (* The [hierarchical] wrapper is used to maintain module hierarchy in the generated

@@ -8,7 +8,8 @@ end
 
 module O : sig
   type 'a t =
-      { dout : 'a [@bits 16] }
+      { dout : 'a [@bits 16]
+      ; times_passed_zero : 'a [@bits 4] }
   [@@deriving hardcaml]
 end
 

@@ -34,9 +34,10 @@ let create scope ({ din; r; valid; clock; clear } : _ I.t) : _ O.t =
             { din = value_to_mod } in
 
     let dial_reg_zero = dial_reg_out ==: of_int_trunc ~width:16 0 in
+    let next_couter_reg = (counter_reg_out +: (uresize ~width:16 dial_reg_zero) +: (uresize ~width:16 mod_out.times_passed_zero)) in
 
     let dr = Signal.reg spec ~enable:valid ~clear_to:(of_int_trunc ~width:16 50) mod_out.dout in
-    let cr = Signal.reg spec ~enable:dial_reg_zero (counter_reg_out +: of_int_trunc ~width:16 1) in
+    let cr = Signal.reg spec ~enable:valid next_couter_reg in
 
     Signal.(dial_reg_out <-- dr);
     Signal.(counter_reg_out <-- cr);
