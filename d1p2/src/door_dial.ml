@@ -24,7 +24,7 @@ end
 let create scope ({ din; r; valid; clock; clear } : _ I.t) : _ O.t =
     let spec = Signal.Reg_spec.create ~clock ~clear () in
     let%hw dial_reg_out = Signal.wire 16 in
-    let counter_reg_out = Signal.wire 16 in
+    let%hw counter_reg_out = Signal.wire 16 in
 
     let value_to_mod = mux2 r (dial_reg_out +: din) ( dial_reg_out -: din) in
     let mod_100_scope = Scope.sub_scope scope "mod100" in
@@ -34,7 +34,8 @@ let create scope ({ din; r; valid; clock; clear } : _ I.t) : _ O.t =
             { din = value_to_mod } in
 
     let dial_reg_zero = dial_reg_out ==: of_int_trunc ~width:16 0 in
-    let next_couter_reg = (counter_reg_out +: (uresize ~width:16 dial_reg_zero) +: (uresize ~width:16 mod_out.times_passed_zero)) in
+    let would_double_count = dial_reg_zero &: (any_bit_set mod_out.times_passed_zero) in
+    let next_couter_reg = (counter_reg_out -: (uresize ~width:16 would_double_count) +: (uresize ~width:16 dial_reg_zero) +: (uresize ~width:16 mod_out.times_passed_zero)) in
 
     let dr = Signal.reg spec ~enable:valid ~clear_to:(of_int_trunc ~width:16 50) mod_out.dout in
     let cr = Signal.reg spec ~enable:valid next_couter_reg in

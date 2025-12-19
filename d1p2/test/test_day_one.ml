@@ -4584,7 +4584,7 @@ let%expect_test "AND gate truth table" =
   Harness.run ~waves_config ~create:Day_one.hierarchical simple_testbench;
   [%expect
     {|
-    0      | 7567   |
+    0      | 6928   |
     Saved waves to /home/jh/Code/ocaml/waveforms/test_day_one_ml_AND_gate_truth_table.vcd
     |}]
 ;;
@@ -4612,7 +4612,7 @@ let%expect_test "AND gate with printed waveforms" =
 
   [%expect
     {|
-    0      | 7567   |
+    0      | 6928   |
     ┌Signals───────────┐┌Waves─────────────────────────────────────────────────────────────────────────┐
     │clear             ││                                                                              │
     │                  ││──────────────────────────────────────────────────────                        │
@@ -4624,7 +4624,7 @@ let%expect_test "AND gate with printed waveforms" =
     │din               ││ 5387.│21041                                                                  │
     │                  ││──────┴───────────────────────────────────────────────                        │
     │                  ││──────────────────┬─────┬───────────┬─────────────────                        │
-    │number            ││ 7564             │7565 │7566       │7567                                     │
+    │number            ││ 6925             │6926 │6927       │6928                                     │
     │                  ││──────────────────┴─────┴───────────┴─────────────────                        │
     └──────────────────┘└──────────────────────────────────────────────────────────────────────────────┘
     |}]
