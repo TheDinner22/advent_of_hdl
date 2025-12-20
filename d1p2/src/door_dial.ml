@@ -36,7 +36,9 @@ let create scope ({ din; r; valid; clock; clear } : _ I.t) : _ O.t =
     let%hw mod_out_zero = mod_out.dout ==: of_int_trunc ~width:16 0 in
     let%hw dial_reg_zero = dial_reg_out ==: of_int_trunc ~width:16 0 in
     let%hw would_double_count = (mod_out_zero |: dial_reg_zero) &: (any_bit_set mod_out.times_passed_zero) in
-    let next_couter_reg = (counter_reg_out -: (uresize ~width:16 would_double_count) +: (uresize ~width:16 mod_out_zero) +: (uresize ~width:16 mod_out.times_passed_zero)) in
+    let%hw would_under_count_right = (dial_reg_zero)&:(would_double_count)&:(value_to_mod >+ (of_int_trunc ~width:16 0)) in
+    let%hw would_under_count_left = (mod_out_zero)&:(would_double_count)&:(value_to_mod <+ (of_int_trunc ~width:16 0)) in
+    let next_couter_reg = (counter_reg_out -: (uresize ~width:16 would_double_count) +: (uresize ~width:16 mod_out_zero) +: (uresize ~width:16 mod_out.times_passed_zero) +: (uresize ~width:16 would_under_count_right) +: (uresize ~width:16 would_under_count_left)) in
 
     let dr = Signal.reg spec ~enable:valid ~clear_to:(of_int_trunc ~width:16 50) mod_out.dout in
     let cr = Signal.reg spec ~enable:valid next_couter_reg in
